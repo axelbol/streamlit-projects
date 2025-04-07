@@ -11,7 +11,7 @@ back_color = '#2C3E50'
 clean_white = '#FFFFFF'
 neon_green = '#06D6A0'
 
-df = pd.read_csv('/home/axel/Code/Python/axel/streamlit/concat_files/concat_shots.csv')
+df = pd.read_csv('concat_shots.csv')
 # df = df[df['situation'] == 'RegularPlay'].reset_index(drop=True)
 # df['location'] = df['location'].apply(json.loads)
 
