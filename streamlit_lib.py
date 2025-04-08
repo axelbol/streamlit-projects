@@ -15,7 +15,7 @@ df = pd.read_csv('concat_files/concat_shots.csv')
 # df = df[df['situation'] == 'RegularPlay'].reset_index(drop=True)
 # df['location'] = df['location'].apply(json.loads)
 
-team = st.selectbox('Select a team', df['teamName'].sort_values().unique(), index=None)
+team = st.selectbox('Select a team', df['teamName'].value_counts().sort_values(ascending=False), index=None)
 player = st.selectbox('Select a player', df[df['teamName'] == team]['playerName'].sort_values().unique(), index=None)
 
 def filter_data(df, team, player):
