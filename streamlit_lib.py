@@ -12,11 +12,24 @@ clean_white = '#FFFFFF'
 neon_green = '#06D6A0'
 
 df = pd.read_csv('concat_files/concat_shots.csv')
-# df = df[df['situation'] == 'RegularPlay'].reset_index(drop=True)
-# df['location'] = df['location'].apply(json.loads)
 
-team = st.selectbox('Select a team', df['teamName'].value_counts().sort_values(ascending=False), index=None)
-player = st.selectbox('Select a player', df[df['teamName'] == team]['playerName'].sort_values().unique(), index=None)
+# Shots Team A(8)
+team_shot_counts = df['teamName'].value_counts()
+team_display = [f"{team} ({count})" for team, count in team_shot_counts.items()]
+
+# Create a mapping from display name back to team name
+display_to_team = {f"{team} ({count})": team for team, count in team_shot_counts.items()}
+
+# Streamlit team selectbox
+team_display_selected = st.selectbox('Select a team', team_display, index=None, placeholder='Select a team')
+
+# Convert display name back to actual team name
+team = display_to_team.get(team_display_selected, None)
+
+# Filter players by selected team
+player_options = df[df['teamName'] == team]['playerName'].sort_values().unique() if team else []
+player = st.selectbox('Select a player', player_options, index=None, placeholder='Select a player')
+# player = st.selectbox('Select a player', df[df['teamName'] == team]['playerName'].sort_values().unique(), index=None)
 
 def filter_data(df, team, player):
     if team:
