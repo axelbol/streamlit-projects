@@ -113,7 +113,14 @@ def scrape_shots_data(url, output_path):
         "Botafogo RJ": ["Botafogo", "Botafogo de Futebol e Regatas"],
         "Club Atletico Penarol": ["Penarol", "Peñarol", "CA Penarol"],
         "Atletico Nacional": ["Atlético Nacional", "Atletico Nacional Medellin"],
-        "Nacional": ["Club Nacional", "Nacional de Montevideo"]
+        "Nacional": ["Club Nacional", "Nacional de Montevideo"],
+        "Talleres": ["Talleres de Córdoba"],
+        "Estudiantes": ["Estudiantes de La Plata"],
+        "Central Cordoba de Santiago": ["Central Córdoba (Santiago del Estero)"],
+        "LDU de Quito": ["LDU Quito"],
+        "Bucaramanga": ["Atlético Bucaramanga"],
+        "Colo Colo": ["Colo-Colo"],
+        "Fortaleza": ["Fortaleza EC"],
         # Add more teams and their aliases as needed
     }
 
