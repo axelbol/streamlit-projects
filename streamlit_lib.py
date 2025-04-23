@@ -1,7 +1,24 @@
 import streamlit as st
 import pandas as pd
-import json
 from mplsoccer import VerticalPitch
+
+# Configuración de página
+# st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="wide")
+
+# Add this at the beginning of your script
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #3A3A3C           ;  /* 30323d */
+    }
+    .stSelectbox label, h1, h2, h3 {
+        color: white !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 st.title('Libertadores 2025 Shot Map')
 st.header('Filter by any team/player to see all their shots taken')
@@ -9,6 +26,7 @@ st.header('Filter by any team/player to see all their shots taken')
 # Colors
 back_color = '#2C3E50'
 clean_white = '#FFFFFF'
+clean_dark = '#000000'
 neon_green = '#06D6A0'
 
 df = pd.read_csv('concat_files/concat_shots.csv')
@@ -34,7 +52,6 @@ team = display_to_team.get(team_display_selected, None)
 # player = st.selectbox('Select a player', player_options, index=None, placeholder='Select a player')
 
 # Filter players by selected team | Colidio (10)
-# Create display names like 'Mbappé (18)' for players of the selected team
 if team:
     players_df = df[df['teamName'] == team]
     player_shot_counts = players_df['playerName'].value_counts()
@@ -65,8 +82,14 @@ pitch = VerticalPitch(
     pitch_length=105,
     pitch_width=68,
     half=True,
-    pitch_color=back_color
+    line_color=clean_dark,
+    linewidth=1,
+    # pitch_color=back_color,
+    pitch_color='#EAEAEA',
+    goal_type='box', # line, circle, box
+    label=False
 )
+
 fig, ax = pitch.draw(figsize=(10,10))
 
 def plot_shots(df, ax, pitch):
@@ -74,13 +97,13 @@ def plot_shots(df, ax, pitch):
         pitch.scatter(
             x=x['x'],
             y=x['y'],
-            ax=ax,
-            s=1000 * x['expectedGoals'],
+            s=800 * x['expectedGoals'],
             color = neon_green if x['eventType'] == 'Goal' else back_color,
             edgecolors=clean_white,
             linewidth=.8,
-            alpha=1 if x['eventType'] == 'Goal' else .5,
-            zorder=2 if x['eventType'] == 'Goal' else 1
+            alpha=1 if x['eventType'] == 'Goal' else .5, # Full opacity (1) for Goals, semi-transparent (0.5) for other shots
+            zorder=2 if x['eventType'] == 'Goal' else 1, # Goals are drawn on top (2) of non-goals (1)
+            ax=ax,
         )
 
 plot_shots(filtered_df, ax, pitch)
