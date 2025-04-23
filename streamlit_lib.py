@@ -4,14 +4,14 @@ from mplsoccer import VerticalPitch
 import matplotlib.pyplot as plt
 
 # Configuración de página
-# st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="wide")
+st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="centered", initial_sidebar_state="expanded")
 
 # Add this at the beginning of your script
 st.markdown(
     """
     <style>
     .stApp {
-        background-color: #3A3A3C           ;  /* 30323d */
+        background-color: #3A3A3C;  /* 30323d */
     }
     .stSelectbox label, h1, h2, h3 {
         color: white !important;
