@@ -16,6 +16,8 @@ st.markdown(
     .stSelectbox label, h1, h2, h3 {
         color: white !important;
     }
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
     """,
     unsafe_allow_html=True
