@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from mplsoccer import VerticalPitch
+import matplotlib.pyplot as plt
 
 # Configuración de página
 # st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="wide")
@@ -82,15 +83,18 @@ pitch = VerticalPitch(
     pitch_length=105,
     pitch_width=68,
     half=True,
-    line_color=clean_dark,
+    line_color=clean_white,
     linewidth=1,
     # pitch_color=back_color,
-    pitch_color='#EAEAEA',
+    pitch_color=back_color, # F9F9F9
     goal_type='box', # line, circle, box
     label=False
 )
 
-fig, ax = pitch.draw(figsize=(10,10))
+# fig, ax = pitch.draw(figsize=(10,10))
+fig, ax = plt.subplots(figsize=(10, 10))
+fig.patch.set_facecolor(back_color)
+pitch.draw(ax=ax)
 
 def plot_shots(df, ax, pitch):
     for x in df.to_dict(orient='records'):
