@@ -6,21 +6,24 @@ import matplotlib.pyplot as plt
 # Configuración de página
 st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="centered", initial_sidebar_state="expanded")
 
-# Add this at the beginning of your script
-st.markdown(
-    """
+# Estilos visuales
+st.markdown("""
     <style>
-    .stApp {
-        background-color: #3A3A3C;  /* 30323d */
-    }
-    .stSelectbox label, h1, h2, h3 {
-        color: white !important;
-    }
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        html, body, [class*="css"]  {
+            font-family: 'Poppins', sans-serif;
+        }
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: visible;}
     </style>
-    """,
-    unsafe_allow_html=True
+""", unsafe_allow_html=True)
+
+# Side Bar
+st.sidebar.title('Libertadores 2025 Shot Map')
+selected_page = st.sidebar.radio(
+    'Go to',
+    ['Home', 'Data Analysis', 'About']
 )
 
 st.title('Libertadores 2025 Shot Map')

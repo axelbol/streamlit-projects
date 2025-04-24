@@ -1,0 +1,28 @@
+/* styles.css */
+
+.stApp {
+    background-color: #3A3A3C;
+}
+
+/* .stSelectbox label,
+h1,
+h2,
+h3 {
+    color: white !important;
+} */
+
+/* .stSidebar {
+    background-color: #2C3E50;
+} */
+
+#MainMenu {
+    visibility: hidden;
+}
+
+header {
+    visibility: visible;
+}
+
+footer {
+    visibility: hidden;
+}

@@ -110,6 +110,7 @@ def scrape_shots_data(url, output_path):
 
     # Set up any known team aliases (add more as needed)
     team_aliases = {
+        # "Terminal": ["Script"],
         "Botafogo RJ": ["Botafogo", "Botafogo de Futebol e Regatas"],
         "Club Atletico Penarol": ["Penarol", "Peñarol", "CA Penarol"],
         "Atletico Nacional": ["Atlético Nacional", "Atletico Nacional Medellin"],
@@ -121,6 +122,7 @@ def scrape_shots_data(url, output_path):
         "Bucaramanga": ["Atlético Bucaramanga"],
         "Colo Colo": ["Colo-Colo"],
         "Fortaleza": ["Fortaleza EC"],
+        "Barcelona SC": ["Barcelona de Guayaquil"],
         # Add more teams and their aliases as needed
     }
 
