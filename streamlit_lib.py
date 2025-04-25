@@ -19,15 +19,33 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Side Bar
-st.sidebar.title('Libertadores 2025 Shot Map')
-selected_page = st.sidebar.radio(
-    'Go to',
-    ['Home', 'Data Analysis', 'About']
-)
-
 st.title('Libertadores 2025 Shot Map')
 st.header('Filter by any team/player to see all their shots taken')
+
+# Side Bar
+st.sidebar.title('LIBERViZ 🏆')
+st.sidebar.info("""
+Note on metrics:\n
+Words with more frequent letters have a higher '**letter score**' (suggested for 1st or 2nd guesses).\n
+""")
+st.sidebar.caption("A [WORDLE](https://www.nytimes.com/games/wordle/index.html) ch🟨🟩t sh🟨🟨t made by [Siavash Yasini](https://www.linkedin.com/in/siavash-yasini/).")
+
+import streamlit as st
+
+page = st.sidebar.selectbox(
+    "Navigate to",
+    ["Home", "Data Analysis", "Visualizations", "About"],
+    index=0
+)
+
+if page == "Home":
+    st.title("Welcome to My App")
+elif page == "Data Analysis":
+    st.title("Data Analysis Tools")
+elif page == "Visualizations":
+    st.title("Interactive Visualizations")
+elif page == "About":
+    st.title("About This Project")
 
 # Colors
 back_color = '#2C3E50'
@@ -90,7 +108,6 @@ pitch = VerticalPitch(
     half=True,
     line_color=clean_white,
     linewidth=1,
-    # pitch_color=back_color,
     pitch_color=back_color, # F9F9F9
     goal_type='box', # line, circle, box
     label=False

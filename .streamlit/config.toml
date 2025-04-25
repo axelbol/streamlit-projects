@@ -2,6 +2,6 @@
 base="dark"
 primaryColor="#3AE37B" # bullet color
 backgroundColor="#3A3A3C"
-secondaryBackgroundColor="#1c1c1c" # sidebar color
+secondaryBackgroundColor="#1c1c1c" # sidebar color #2C3E50
 textColor="#ffffff"
 font="sans serif"
