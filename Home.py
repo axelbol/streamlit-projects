@@ -53,7 +53,7 @@ def prepare_player_options(shots_df, team):
     return player_display, display_to_player
 
 # Configuración de página
-st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="centered", initial_sidebar_state="collapsed")
 
 # Estilos visuales
 st.markdown("""
@@ -62,10 +62,24 @@ st.markdown("""
         html, body, [class*="css"]  {
             font-family: 'Poppins', sans-serif;
         }
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
         MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         # header {visibility: visible;}
         header {visibility: hidden;}
+
+        /* Custom styles for mobile responsiveness */
+        @media screen and (max-width: 640px) {
+            .st-emotion-cache-16txtl3 h1 {
+                font-size: 1.5rem !important;
+            }
+            .st-emotion-cache-16txtl3 h2, .st-emotion-cache-16txtl3 h3 {
+                font-size: 1.2rem !important;
+            }
+        }
     </style>
 """, unsafe_allow_html=True)
 
