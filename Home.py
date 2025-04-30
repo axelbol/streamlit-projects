@@ -53,7 +53,7 @@ def prepare_player_options(shots_df, team):
     return player_display, display_to_player
 
 # Configuración de página
-st.set_page_config(page_title="Libertadores 2025 Shot Map", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Libertadores 2025 Shot Map", page_icon=":soccer:", layout="centered", initial_sidebar_state="auto")
 
 # Estilos visuales
 st.markdown("""
