@@ -52,8 +52,50 @@ def prepare_player_options(shots_df, team):
         display_to_player = {}
     return player_display, display_to_player
 
+# Cache top players data preparation
+@st.cache_data
+def prepare_top_shots_table(df, team=None, limit=10):
+    """Prepare data for top shots taken table"""
+    if team:
+        filtered_df = df[df['teamName'] == team]
+    else:
+        filtered_df = df
+
+    # Group by player and team, count shots
+    shots_by_player = filtered_df.groupby(['playerName', 'teamName']).size().reset_index(name='Shots')
+
+    # Sort by shots and get top N
+    top_players = shots_by_player.sort_values('Shots', ascending=False).head(limit)
+
+    # Rename columns for display
+    top_players.columns = ['Name', 'Team', 'Shots']
+
+    return top_players
+
+@st.cache_data
+def prepare_top_goals_table(df, team=None, limit=10):
+    """Prepare data for top goals table"""
+    if team:
+        filtered_df = df[df['teamName'] == team]
+    else:
+        filtered_df = df
+
+    # Filter for goals only
+    goals_df = filtered_df[filtered_df['eventType'] == 'Goal']
+
+    # Group by player and team, count goals
+    goals_by_player = goals_df.groupby(['playerName', 'teamName']).size().reset_index(name='Goals')
+
+    # Sort by goals and get top N
+    top_scorers = goals_by_player.sort_values('Goals', ascending=False).head(limit)
+
+    # Rename columns for display
+    top_scorers.columns = ['Name', 'Team', 'Goals']
+
+    return top_scorers
+
 # Configuración de página
-st.set_page_config(page_title="Libertadores 2025 Shot Map", page_icon=":soccer:", layout="centered", initial_sidebar_state="auto")
+st.set_page_config(page_title="Libertadores 2025 Shot Map", page_icon=":soccer:", layout="centered", initial_sidebar_state="auto") #:trophy:
 
 # Estilos visuales
 st.markdown("""
@@ -171,6 +213,20 @@ with st.spinner("Drawing pitch and shots..."):
 
     # Display the plot
     st.pyplot(fig)
+
+# Add a separator
+st.markdown("---")
+
+# Display stats table based on selection
+st.subheader(f"Top 10 Players by {'Goals' if shot_type_radio == 'Shots On Target' else 'Shots Taken'}")
+
+# Get the appropriate table based on shot type and team selection
+if shot_type_radio == "Shots Taken":
+    top_players_table = prepare_top_shots_table(df, team)
+    st.table(top_players_table)
+else:  # Shots On Target - show goals
+    top_goals_table = prepare_top_goals_table(target_shots, team)
+    st.table(top_goals_table)
 
 # Optional: Show statistics about the filtered data
     # with st.expander("Shot Statistics"):
