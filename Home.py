@@ -72,6 +72,30 @@ def prepare_top_shots_table(df, team=None, limit=10):
 
     return top_players
 
+# top players shots on target
+@st.cache_data
+def prepare_top_shots_target_table(df, team=None, limit=10):
+    """Prepare data for top shots on target table"""
+    if team:
+        filtered_df = df[df['teamName'] == team]
+    else:
+        filtered_df = df
+
+    # Filter for goals only
+    shots_target_df = filtered_df[filtered_df['isOnTarget'] == True]
+
+    # Group by player and team, count shots
+    shots_by_player = shots_target_df.groupby(['playerName', 'teamName']).size().reset_index(name='Shots')
+
+    # Sort by shots and get top N
+    top_players = shots_by_player.sort_values('Shots', ascending=False).head(limit)
+
+    # Rename columns for display
+    top_players.columns = ['Name', 'Team', 'Shots']
+
+    return top_players
+
+# top 10 players by goals
 @st.cache_data
 def prepare_top_goals_table(df, team=None, limit=10):
     """Prepare data for top goals table"""
@@ -93,6 +117,22 @@ def prepare_top_goals_table(df, team=None, limit=10):
     top_scorers.columns = ['Name', 'Team', 'Goals']
 
     return top_scorers
+
+# New function to get top N players overall for shots or shots on target
+@st.cache_data
+def get_top_overall_players(df, shot_type="shots", limit=5):
+    """Get top players across all teams for shots or shots on target"""
+    if shot_type == "on_target":
+        # Filter for shots on target
+        df = df[df['isOnTarget'] == True]
+
+    # Group by player and team, count shots
+    shots_by_player = df.groupby(['playerName', 'teamName']).size().reset_index(name='count')
+
+    # Sort by count and get top N
+    top_players = shots_by_player.sort_values('count', ascending=False).head(limit)
+
+    return top_players
 
 # Configuración de página
 st.set_page_config(page_title="Libertadores 2025 Shot Map", page_icon=":soccer:", layout="centered", initial_sidebar_state="auto") #:trophy:
@@ -121,6 +161,20 @@ st.markdown("""
             .st-emotion-cache-16txtl3 h2, .st-emotion-cache-16txtl3 h3 {
                 font-size: 1.2rem !important;
             }
+        }
+
+        /* Custom styling for the badges */
+        .badge-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .player-rank {
+            font-weight: bold;
+            color: white;
+            margin-right: 5px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -217,16 +271,61 @@ with st.spinner("Drawing pitch and shots..."):
 # Add a separator
 st.markdown("---")
 
+# Show top players across all competition when a team is selected
+if team:
+    # Determine how many players and which shot type based on radio selection
+    if shot_type_radio == "Shots Taken":
+        limit = 3  # Top 3 for shots taken
+        # Use the existing function that works for your tables
+        top_overall = prepare_top_shots_table(df, team=None, limit=limit)
+    else:  # "Shots On Target"
+        limit = 5  # Top 5 for shots on target
+        # Use the existing function that works for your tables
+        top_overall = prepare_top_shots_target_table(df, team=None, limit=limit)
+
+    st.subheader(f"Top {limit} Players Across All Competition by {'Shots On Target' if shot_type_radio == 'Shots On Target' else 'Shots Taken'}")
+
+    # Display badges horizontally
+    cols = st.columns(limit)
+
+    # Loop through the dataframe rows directly
+    for idx in range(min(limit, len(top_overall))):
+        with cols[idx]:
+            player_name = top_overall.iloc[idx]['Name']
+            team_name = top_overall.iloc[idx]['Team']
+            count = top_overall.iloc[idx]['Shots']
+
+            # Display badge
+            st.markdown(f"""
+            <div style="text-align: center;">
+                <div style="background-color: {purple if shot_type_radio == 'Shots On Target' else neon_green};
+                           color: white;
+                           border-radius: 12px;
+                           padding: 10px;
+                           margin: 5px 0;">
+                    <div style="font-size: 20px; font-weight: bold;">#{idx+1}</div>
+                    <div style="font-size: 16px;">{player_name}</div>
+                    <div style="font-size: 12px;">({team_name})</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-top: 5px;">{count}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
 # Display stats table based on selection
-st.subheader(f"Top 10 Players by {'Goals' if shot_type_radio == 'Shots On Target' else 'Shots Taken'}")
+st.subheader(f"Top 10 Players by {'Shots on Target' if shot_type_radio == 'Shots On Target' else 'Shots Taken'}")
 
 # Get the appropriate table based on shot type and team selection
 if shot_type_radio == "Shots Taken":
     top_players_table = prepare_top_shots_table(df, team)
     st.table(top_players_table)
 else:  # Shots On Target - show goals
-    top_goals_table = prepare_top_goals_table(target_shots, team)
-    st.table(top_goals_table)
+    top_shots_on_target = prepare_top_shots_target_table(df, team)
+    st.table(top_shots_on_target)
+
+    # top_goals_table = prepare_top_goals_table(target_shots, team)
+    # st.table(top_goals_table)
+
+
 
 # Optional: Show statistics about the filtered data
     # with st.expander("Shot Statistics"):
