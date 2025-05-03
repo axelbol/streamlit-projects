@@ -275,7 +275,7 @@ st.markdown("---")
 if team:
     # Determine how many players and which shot type based on radio selection
     if shot_type_radio == "Shots Taken":
-        limit = 3  # Top 3 for shots taken
+        limit = 5  # Top 3 for shots taken
         # Use the existing function that works for your tables
         top_overall = prepare_top_shots_table(df, team=None, limit=limit)
     else:  # "Shots On Target"
