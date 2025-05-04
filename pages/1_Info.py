@@ -3,19 +3,17 @@ import pandas as pd
 from mplsoccer import VerticalPitch
 import matplotlib.pyplot as plt
 
+# Colors
+BACK_COLOR = '#2C3E50'
+CLEAN_WHITE = '#FFFFFF'
+NEON_GREEN = '#06D6A0'
+PURPLE = '#684756'
+BEAVER = '#AB8476'
+
 # Add caching to data loading
 @st.cache_data
 def load_data():
     return pd.read_csv('concat_files/concat_shots.csv')
-
-# Cache filtering operations
-@st.cache_data
-def filter_data(df, team, player):
-    if team:
-        df = df[df['teamName'] == team]
-    if player:
-        df = df[df['playerName'] == player]
-    return df
 
 # Cache pitch creation
 @st.cache_resource
@@ -25,270 +23,162 @@ def create_pitch():
         pitch_length=105,
         pitch_width=68,
         half=True,
-        line_color=clean_white,
+        line_color=CLEAN_WHITE,
         linewidth=1,
-        pitch_color=back_color,
+        pitch_color=BACK_COLOR,
         goal_type='box',
         label=False
     )
 
-# Cache team and player options preparation
 @st.cache_data
-def prepare_team_options(shots_df):
-    team_shot_counts = shots_df['teamName'].value_counts()
-    team_display = [f"{team} ({count})" for team, count in team_shot_counts.items()]
-    display_to_team = {f"{team} ({count})": team for team, count in team_shot_counts.items()}
-    return team_display, display_to_team
+def prepare_options(df, column):
+    """Generic function to prepare display options with counts for any column"""
+    counts = df[column].value_counts()
+    displays = [f"{value} ({count})" for value, count in counts.items()]
+    display_to_value = {f"{value} ({count})": value for value, count in counts.items()}
+    return displays, display_to_value
 
 @st.cache_data
-def prepare_player_options(shots_df, team):
-    if team:
-        players_df = shots_df[shots_df['teamName'] == team]
-        player_shot_counts = players_df['playerName'].value_counts()
-        player_display = [f"{player} ({count})" for player, count in player_shot_counts.items()]
-        display_to_player = {f"{player} ({count})": player for player, count in player_shot_counts.items()}
-    else:
-        player_display = []
-        display_to_player = {}
-    return player_display, display_to_player
+def prepare_player_options(df, team=None):
+    """Prepare player options, filtered by team if provided"""
+    filtered_df = df[df['teamName'] == team] if team else df
+    return prepare_options(filtered_df, 'playerName')
 
-# Modified function to include xG
 @st.cache_data
-def prepare_top_shots_table(df, team=None, limit=10):
-    """Prepare data for top shots taken table with average xG"""
-    if team:
-        filtered_df = df[df['teamName'] == team]
-    else:
-        filtered_df = df
+def prepare_top_players_table(df, shot_type="all", team=None, limit=10):
+    """Unified function for preparing top players table
 
-    # Group by player and team, count shots and calculate avg xG
-    shots_by_player = filtered_df.groupby(['playerName', 'teamName']).agg(
+    Args:
+        df: DataFrame with shot data
+        shot_type: 'all' for all shots, 'target' for on-target only
+        team: Filter by team if provided
+        limit: Number of rows to return
+    """
+    # Filter by team if needed
+    filtered_df = df[df['teamName'] == team] if team else df
+
+    # Filter by shot type if needed
+    if shot_type == "target":
+        filtered_df = filtered_df[filtered_df['isOnTarget'] == True]
+
+    # Group by player and team
+    result = filtered_df.groupby(['playerName', 'teamName']).agg(
         Shots=('playerName', 'size'),
         xG=('expectedGoals', 'mean')
     ).reset_index()
 
-    # Sort by shots and get top N
-    top_players = shots_by_player.sort_values('Shots', ascending=False).head(limit)
+    # Sort and limit
+    result = result.sort_values('Shots', ascending=False).head(limit)
 
-    # Format xG to 2 decimal places
-    top_players['xG'] = top_players['xG'].round(2)
+    # Format xG
+    result['xG'] = result['xG'].apply(lambda x: f'{x:.2f}')
 
-    # Rename columns for display
-    top_players.columns = ['Name', 'Team', 'Shots', 'xG']
+    # Rename columns
+    result.columns = ['Name', 'Team', 'Shots', 'xG']
 
-    return top_players
+    return result
 
-# Modified function to include xG for shots on target
-@st.cache_data
-def prepare_top_shots_target_table(df, team=None, limit=10):
-    """Prepare data for top shots on target table with average xG"""
-    if team:
-        filtered_df = df[df['teamName'] == team]
-    else:
-        filtered_df = df
+# Page configuration
+st.set_page_config(
+    page_title="Libertadores 2025 Shot Map",
+    page_icon=":soccer:",
+    layout="centered"
+)
 
-    # Filter for shots on target only
-    shots_target_df = filtered_df[filtered_df['isOnTarget'] == True]
-
-    # Group by player and team, count shots and calculate avg xG
-    shots_by_player = shots_target_df.groupby(['playerName', 'teamName']).agg(
-        Shots=('playerName', 'size'),
-        xG=('expectedGoals', 'mean')
-    ).reset_index()
-
-    # Sort by shots and get top N
-    top_players = shots_by_player.sort_values('Shots', ascending=False).head(limit)
-
-    # Format xG to 2 decimal places
-    top_players['xG'] = top_players['xG'].round(2)
-
-    # Rename columns for display
-    top_players.columns = ['Name', 'Team', 'Shots', 'xG']
-
-    return top_players
-
-# Modified function to include xG for goals
-@st.cache_data
-def prepare_top_goals_table(df, team=None, limit=10):
-    """Prepare data for top goals table with average xG"""
-    if team:
-        filtered_df = df[df['teamName'] == team]
-    else:
-        filtered_df = df
-
-    # Filter for goals only
-    goals_df = filtered_df[filtered_df['eventType'] == 'Goal']
-
-    # Group by player and team, count goals and calculate avg xG
-    goals_by_player = goals_df.groupby(['playerName', 'teamName']).agg(
-        Goals=('playerName', 'size'),
-        xG=('expectedGoals', 'mean')
-    ).reset_index()
-
-    # Sort by goals and get top N
-    top_scorers = goals_by_player.sort_values('Goals', ascending=False).head(limit)
-
-    # Format xG to 2 decimal places
-    top_scorers['xG'] = top_scorers['xG'].round(2)
-
-    # Rename columns for display
-    top_scorers.columns = ['Name', 'Team', 'Goals', 'xG']
-
-    return top_scorers
-
-# Modified function to include xG for top overall players
-@st.cache_data
-def get_top_overall_players(df, shot_type="shots", limit=5):
-    """Get top players across all teams for shots or shots on target with average xG"""
-    if shot_type == "on_target":
-        # Filter for shots on target
-        df = df[df['isOnTarget'] == True]
-
-    # Group by player and team, count shots and calculate avg xG
-    shots_by_player = df.groupby(['playerName', 'teamName']).agg(
-        count=('playerName', 'size'),
-        xG=('expectedGoals', 'mean')
-    ).reset_index()
-
-    # Sort by count and get top N
-    top_players = shots_by_player.sort_values('count', ascending=False).head(limit)
-
-    # Format xG to 2 decimal places
-    top_players['xG'] = top_players['xG'].round(2)
-
-    return top_players
-
-# Configuración de página
-st.set_page_config(page_title="Libertadores 2025 Shot Map", page_icon=":soccer:", layout="centered", initial_sidebar_state="auto") #:trophy:
-
-# Estilos visuales
+# Styles
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-        html, body, [class*="css"]  {
+        html, body, [class*="css"] {
             font-family: 'Poppins', sans-serif;
         }
         .main .block-container {
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
-        MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        # header {visibility: visible;}
-        header {visibility: hidden;}
+        MainMenu, footer, header {visibility: hidden;}
 
-        /* Custom styles for mobile responsiveness */
+        /* Mobile responsiveness */
         @media screen and (max-width: 640px) {
-            .st-emotion-cache-16txtl3 h1 {
-                font-size: 1.5rem !important;
-            }
-            .st-emotion-cache-16txtl3 h2, .st-emotion-cache-16txtl3 h3 {
-                font-size: 1.2rem !important;
-            }
+            .st-emotion-cache-16txtl3 h1 {font-size: 1.5rem !important;}
+            .st-emotion-cache-16txtl3 h2, .st-emotion-cache-16txtl3 h3 {font-size: 1.2rem !important;}
         }
 
-        /* Custom styling for the badges */
-        .badge-container {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
+        /* Hide index column in tables */
+        .stTable table tr th:first-child, .stTable table tr td:first-child {display: none !important;}
 
-        .player-rank {
-            font-weight: bold;
-            color: white;
-            margin-right: 5px;
-        }
-
-        /* Hide the index column in tables */
-        .dataframe thead tr th:first-child {
-            display: none;
-        }
-        .dataframe tbody tr th:first-child {
-            display: none;
-        }
+        /* Center numeric columns */
+        .stTable table tr td:nth-child(4), .stTable table tr td:nth-child(5) {text-align: center !important;}
     </style>
 """, unsafe_allow_html=True)
 
+# Main title
 st.title('Libertadores 2025 Shot Map')
 st.header('Filter by any team/player to see all their shots taken')
 
 # Side Bar
 st.sidebar.title('🏆 LIBERViZ')
-st.sidebar.info("""
-Note:\n
-Shots taken in the **Copa Libertadores 2025**.\n
-""")
+st.sidebar.info("Note:\nShots taken in the **Copa Libertadores 2025**.")
 st.sidebar.caption(
-    "Want to see something else related to [Libertadores](https://www.conmebollibertadores.com/)? Feel free to send me a message [axelbol](https://x.com/axel_bol)."
+    "Want to see something else related to [Libertadores](https://www.conmebollibertadores.com/)? "
+    "Feel free to send me a message [axelbol](https://x.com/axel_bol)."
 )
 
-# Colors
-back_color = '#2C3E50'
-clean_white = '#FFFFFF'
-clean_dark = '#000000'
-neon_green = '#06D6A0'
-purple = '#8338EC' # #D33E43
-
-# Load data once and cache it
+# Load data once
 df = load_data()
 
-# Filter on target shots once
-target_shots = df[df['isOnTarget'] == True]
-
-# Create the pitch object once
-pitch = create_pitch()
-
-# Add RADIO BUTTONS for shot type selection
+# Add radio buttons for shot type selection
 shot_type_radio = st.radio(
     "Select shot type:",
     ["Shots Taken", "Shots On Target"],
     horizontal=True
 )
 
-# Use current data based on selection
-current_data = target_shots if shot_type_radio == "Shots On Target" else df
-goal_color = purple if shot_type_radio == "Shots On Target" else neon_green
+# Pre-filter data based on selection
+current_data = df[df['isOnTarget'] == True] if shot_type_radio == "Shots On Target" else df
+goal_color = PURPLE if shot_type_radio == "Shots On Target" else NEON_GREEN
 
-# Get team options (cached)
-team_display, display_to_team = prepare_team_options(current_data)
+# Get team options
+team_display, display_to_team = prepare_options(current_data, 'teamName')
 
-# Streamlit team selectbox
+# Team selection
 team_display_selected = st.selectbox('Select a team', team_display, index=None, placeholder='Select a team')
-
-# Convert display name back to actual team name
 team = display_to_team.get(team_display_selected, None)
 
-# Get player options (cached)
+# Get player options based on team selection
 player_display, display_to_player = prepare_player_options(current_data, team)
 
-# Streamlit player selectbox
+# Player selection
 player_display_selected = st.selectbox('Select a player', player_display, index=None, placeholder='Select a player')
-
-# Convert display name back to actual player name
 player = display_to_player.get(player_display_selected, None)
 
-# Filter the data (cached)
-filtered_df = filter_data(current_data, team, player)
+# Filter data based on selections
+filtered_df = current_data
+if team:
+    filtered_df = filtered_df[filtered_df['teamName'] == team]
+if player:
+    filtered_df = filtered_df[filtered_df['playerName'] == player]
 
-# Create figure for plot
+# Create plot
 with st.spinner("Drawing pitch and shots..."):
     fig, ax = plt.subplots(figsize=(10, 10))
-    fig.patch.set_facecolor(back_color)
+    fig.patch.set_facecolor(BACK_COLOR)
+
+    # Draw pitch
+    pitch = create_pitch()
     pitch.draw(ax=ax)
 
-    # Optimize plotting by reducing redundant operations
-    for x in filtered_df.to_dict(orient='records'):
-        is_goal = x['eventType'] == 'Goal'
+    # Plot shots
+    for _, shot in filtered_df.iterrows():
+        is_goal = shot['eventType'] == 'Goal'
         pitch.scatter(
-            x=x['x'],
-            y=x['y'],
-            s=800 * x['expectedGoals'],
-            color=goal_color if is_goal else back_color,
-            edgecolors=clean_white,
-            linewidth=.8,
-            alpha=1 if is_goal else .5,
+            x=shot['x'],
+            y=shot['y'],
+            s=800 * shot['expectedGoals'],
+            color=goal_color if is_goal else BACK_COLOR,
+            edgecolors=CLEAN_WHITE,
+            linewidth=0.8,
+            alpha=1 if is_goal else 0.5,
             zorder=2 if is_goal else 1,
             ax=ax,
         )
@@ -296,25 +186,23 @@ with st.spinner("Drawing pitch and shots..."):
     # Display the plot
     st.pyplot(fig)
 
-# Add a separator
+# Add separator
 st.markdown("---")
 
 # Show top players across all competition when a team is selected
 if team:
-    # Determine how many players and which shot type based on radio selection
-    if shot_type_radio == "Shots Taken":
-        limit = 5  # Top 5 for shots taken
-        top_overall = prepare_top_shots_table(df, team=None, limit=limit)
-    else:  # "Shots On Target"
-        limit = 5  # Top 5 for shots on target
-        top_overall = prepare_top_shots_target_table(df, team=None, limit=limit)
+    # Determine shot type and limit
+    shot_type_param = "target" if shot_type_radio == "Shots On Target" else "all"
+    limit = 5
 
-    st.subheader(f"Top {limit} Players Across All Competition by {'Shots On Target' if shot_type_radio == 'Shots On Target' else 'Shots Taken'}")
+    # Get top players
+    top_overall = prepare_top_players_table(df, shot_type=shot_type_param, limit=limit)
+
+    st.subheader(f"Top {limit} Players Across All Competition by {shot_type_radio}")
 
     # Display badges horizontally
     cols = st.columns(limit)
 
-    # Loop through the dataframe rows directly
     for idx in range(min(limit, len(top_overall))):
         with cols[idx]:
             player_name = top_overall.iloc[idx]['Name']
@@ -322,14 +210,18 @@ if team:
             count = top_overall.iloc[idx]['Shots']
             xg = top_overall.iloc[idx]['xG']
 
-            # Display badge with xG
             st.markdown(f"""
             <div style="text-align: center;">
-                <div style="background-color: {purple if shot_type_radio == 'Shots On Target' else neon_green};
+                <div style="background-color: {BEAVER};
                            color: white;
                            border-radius: 12px;
                            padding: 10px;
-                           margin: 5px 0;">
+                           margin: 5px 0;
+                           height: 200px;
+                           width: 100%;
+                           display: flex;
+                           flex-direction: column;
+                           justify-content: space-between;">
                     <div style="font-size: 20px; font-weight: bold;">#{idx+1}</div>
                     <div style="font-size: 16px;">{player_name}</div>
                     <div style="font-size: 12px;">({team_name})</div>
@@ -340,14 +232,11 @@ if team:
             """, unsafe_allow_html=True)
 
 # Display stats table based on selection
-st.subheader(f"Top 10 Players by {'Shots on Target' if shot_type_radio == 'Shots On Target' else 'Shots Taken'}")
+st.subheader(f"Top 10 Players by {shot_type_radio}")
 
-# Get the appropriate table based on shot type and team selection
-if shot_type_radio == "Shots Taken":
-    top_players_table = prepare_top_shots_table(df, team)
-    # Use hide_index=True to remove index column
-    st.dataframe(top_players_table, hide_index=True)
-else:  # Shots On Target
-    top_shots_on_target = prepare_top_shots_target_table(df, team)
-    # Use hide_index=True to remove index column
-    st.dataframe(top_shots_on_target, hide_index=True)
+# Get top players table based on shot type
+shot_type_param = "target" if shot_type_radio == "Shots On Target" else "all"
+top_players_table = prepare_top_players_table(df, shot_type=shot_type_param, team=team)
+
+# Display table without index
+st.table(top_players_table.reset_index(drop=True))
