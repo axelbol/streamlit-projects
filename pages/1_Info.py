@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
-from mplsoccer import VerticalPitch
 import matplotlib.pyplot as plt
+from mplsoccer import VerticalPitch
+import plotly.graph_objects as go
 
 # Colors
 BACK_COLOR = '#2C3E50'
@@ -14,69 +15,6 @@ BEAVER = '#AB8476'
 @st.cache_data
 def load_data():
     return pd.read_csv('concat_files/concat_shots.csv')
-
-# Cache pitch creation
-@st.cache_resource
-def create_pitch():
-    return VerticalPitch(
-        pitch_type='custom',
-        pitch_length=105,
-        pitch_width=68,
-        half=True,
-        line_color=CLEAN_WHITE,
-        linewidth=1,
-        pitch_color=BACK_COLOR,
-        goal_type='box',
-        label=False
-    )
-
-@st.cache_data
-def prepare_options(df, column):
-    """Generic function to prepare display options with counts for any column"""
-    counts = df[column].value_counts()
-    displays = [f"{value} ({count})" for value, count in counts.items()]
-    display_to_value = {f"{value} ({count})": value for value, count in counts.items()}
-    return displays, display_to_value
-
-@st.cache_data
-def prepare_player_options(df, team=None):
-    """Prepare player options, filtered by team if provided"""
-    filtered_df = df[df['teamName'] == team] if team else df
-    return prepare_options(filtered_df, 'playerName')
-
-@st.cache_data
-def prepare_top_players_table(df, shot_type="all", team=None, limit=10):
-    """Unified function for preparing top players table
-
-    Args:
-        df: DataFrame with shot data
-        shot_type: 'all' for all shots, 'target' for on-target only
-        team: Filter by team if provided
-        limit: Number of rows to return
-    """
-    # Filter by team if needed
-    filtered_df = df[df['teamName'] == team] if team else df
-
-    # Filter by shot type if needed
-    if shot_type == "target":
-        filtered_df = filtered_df[filtered_df['isOnTarget'] == True]
-
-    # Group by player and team
-    result = filtered_df.groupby(['playerName', 'teamName']).agg(
-        Shots=('playerName', 'size'),
-        xG=('expectedGoals', 'mean')
-    ).reset_index()
-
-    # Sort and limit
-    result = result.sort_values('Shots', ascending=False).head(limit)
-
-    # Format xG
-    result['xG'] = result['xG'].apply(lambda x: f'{x:.2f}')
-
-    # Rename columns
-    result.columns = ['Name', 'Team', 'Shots', 'xG']
-
-    return result
 
 # Page configuration
 st.set_page_config(
@@ -114,7 +52,7 @@ st.markdown("""
 
 # Main title
 st.title('Libertadores 2025 Shot Map')
-st.header('Filter by any team/player to see all their shots taken')
+st.header('Viz for home and away performance')
 
 # Side Bar
 st.sidebar.title('🏆 LIBERViZ')
@@ -127,116 +65,102 @@ st.sidebar.caption(
 # Load data once
 df = load_data()
 
-# Add radio buttons for shot type selection
-shot_type_radio = st.radio(
-    "Select shot type:",
-    ["Shots Taken", "Shots On Target"],
-    horizontal=True
-)
+# Rename the dataframe to match the ipynb code
+shots = df
 
-# Pre-filter data based on selection
-current_data = df[df['isOnTarget'] == True] if shot_type_radio == "Shots On Target" else df
-goal_color = PURPLE if shot_type_radio == "Shots On Target" else NEON_GREEN
+# Create tabs for different visualizations
+tab1, tab2 = st.tabs(["Shot Map", "Home vs Away Stats"])
 
-# Get team options
-team_display, display_to_team = prepare_options(current_data, 'teamName')
+with tab1:
+    st.subheader("Shot Map Visualization")
+    # Here you would add your mplsoccer VerticalPitch visualization
+    # You can add your shot map visualization code here
 
-# Team selection
-team_display_selected = st.selectbox('Select a team', team_display, index=None, placeholder='Select a team')
-team = display_to_team.get(team_display_selected, None)
+    # Example placeholder for the shot map
+    st.info("Shot map visualization will be displayed here. Add your mplsoccer code.")
 
-# Get player options based on team selection
-player_display, display_to_player = prepare_player_options(current_data, team)
+    # Example code for shot map (you'll need to adapt this to your data)
+    # pitch = VerticalPitch(pitch_type='statsbomb', pitch_color=BACK_COLOR, line_color=CLEAN_WHITE)
+    # fig, ax = pitch.draw(figsize=(10, 7))
+    # # Add shots visualization code here
+    # st.pyplot(fig)
 
-# Player selection
-player_display_selected = st.selectbox('Select a player', player_display, index=None, placeholder='Select a player')
-player = display_to_player.get(player_display_selected, None)
+with tab2:
+    st.subheader("Home vs Away Performance")
 
-# Filter data based on selections
-filtered_df = current_data
-if team:
-    filtered_df = filtered_df[filtered_df['teamName'] == team]
-if player:
-    filtered_df = filtered_df[filtered_df['playerName'] == player]
+    # Group by teamName and h_a
+    grouped = shots.groupby(['teamName', 'h_a']).size().reset_index(name='count')
 
-# Create plot
-with st.spinner("Drawing pitch and shots..."):
-    fig, ax = plt.subplots(figsize=(10, 10))
-    fig.patch.set_facecolor(BACK_COLOR)
+    # Pivot the data
+    pivot_df = grouped.pivot(index='teamName', columns='h_a', values='count').fillna(0)
 
-    # Draw pitch
-    pitch = create_pitch()
-    pitch.draw(ax=ax)
+    # Ensure 'h' and 'a' columns exist
+    for col in ['h', 'a']:
+        if col not in pivot_df.columns:
+            pivot_df[col] = 0
 
-    # Plot shots
-    for _, shot in filtered_df.iterrows():
-        is_goal = shot['eventType'] == 'Goal'
-        pitch.scatter(
-            x=shot['x'],
-            y=shot['y'],
-            s=800 * shot['expectedGoals'],
-            color=goal_color if is_goal else BACK_COLOR,
-            edgecolors=CLEAN_WHITE,
-            linewidth=0.8,
-            alpha=1 if is_goal else 0.5,
-            zorder=2 if is_goal else 1,
-            ax=ax,
-        )
+    # Sort by total count
+    pivot_df['total'] = pivot_df.sum(axis=1)
+    pivot_df = pivot_df.sort_values('total', ascending=False)
+    teams = pivot_df.index.tolist()
+    home_counts = pivot_df['h']
+    away_counts = pivot_df['a']
+    pivot_df = pivot_df.drop(columns='total')
 
-    # Display the plot
-    st.pyplot(fig)
+    # Display the data table
+    st.dataframe(pivot_df.rename(columns={'h': 'Home Shots', 'a': 'Away Shots'}),
+                 use_container_width=True)
 
-# Add separator
-st.markdown("---")
+    # Plot with Plotly
+    fig = go.Figure()
 
-# Show top players across all competition when a team is selected
-if team:
-    # Determine shot type and limit
-    shot_type_param = "target" if shot_type_radio == "Shots On Target" else "all"
-    limit = 5
+    # Home bar
+    fig.add_trace(go.Bar(
+        x=teams,
+        y=home_counts,
+        name='Home (h)',
+        marker_color=NEON_GREEN
+    ))
 
-    # Get top players
-    top_overall = prepare_top_players_table(df, shot_type=shot_type_param, limit=limit)
+    # Away bar stacked on top
+    fig.add_trace(go.Bar(
+        x=teams,
+        y=away_counts,
+        name='Away (a)',
+        marker_color=PURPLE
+    ))
 
-    st.subheader(f"Top {limit} Players Across All Competition by {shot_type_radio}")
+    fig.update_layout(
+        barmode='stack',
+        title='Shot Count per Team (Home vs Away)',
+        xaxis_title='Team Name',
+        yaxis_title='Number of Shots',
+        legend_title='Location',
+        xaxis_tickangle=-45,
+        height=600,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color=CLEAN_WHITE)
+    )
 
-    # Display badges horizontally
-    cols = st.columns(limit)
+    # Display plotly chart
+    st.plotly_chart(fig, use_container_width=True)
 
-    for idx in range(min(limit, len(top_overall))):
-        with cols[idx]:
-            player_name = top_overall.iloc[idx]['Name']
-            team_name = top_overall.iloc[idx]['Team']
-            count = top_overall.iloc[idx]['Shots']
-            xg = top_overall.iloc[idx]['xG']
+    # Add some insights
+    st.subheader("Insights")
 
-            st.markdown(f"""
-            <div style="text-align: center;">
-                <div style="background-color: {BEAVER};
-                           color: white;
-                           border-radius: 12px;
-                           padding: 10px;
-                           margin: 5px 0;
-                           height: 200px;
-                           width: 100%;
-                           display: flex;
-                           flex-direction: column;
-                           justify-content: space-between;">
-                    <div style="font-size: 20px; font-weight: bold;">#{idx+1}</div>
-                    <div style="font-size: 16px;">{player_name}</div>
-                    <div style="font-size: 12px;">({team_name})</div>
-                    <div style="font-size: 18px; font-weight: bold; margin-top: 5px;">{count}</div>
-                    <div style="font-size: 14px;">xG: {xg}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    # Calculate team with most home shots
+    max_home_team = home_counts.idxmax()
+    max_home_shots = home_counts.max()
 
-# Display stats table based on selection
-st.subheader(f"Top 10 Players by {shot_type_radio}")
+    # Calculate team with most away shots
+    max_away_team = away_counts.idxmax()
+    max_away_shots = away_counts.max()
 
-# Get top players table based on shot type
-shot_type_param = "target" if shot_type_radio == "Shots On Target" else "all"
-top_players_table = prepare_top_players_table(df, shot_type=shot_type_param, team=team)
+    # Display insights
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(label="Team with Most Home Shots", value=max_home_team, delta=f"{int(max_home_shots)} shots")
 
-# Display table without index
-st.table(top_players_table.reset_index(drop=True))
+    with col2:
+        st.metric(label="Team with Most Away Shots", value=max_away_team, delta=f"{int(max_away_shots)} shots")
