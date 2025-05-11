@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 BACK_COLOR = '#2C3E50'
 CLEAN_WHITE = '#FFFFFF'
 NEON_GREEN = '#06D6A0'
-PURPLE = '#684756'
-BEAVER = '#AB8476'
+VERMILION = '#F64740'
+BRIGHT_PINK = '#FF6F61'
 
 # Add caching to data loading
 @st.cache_data
@@ -80,7 +80,7 @@ def prepare_top_players_table(df, shot_type="all", team=None, limit=10):
 
 # Page configuration
 st.set_page_config(
-    page_title="Libertadores 2025 Shot Map",
+    page_title="Libertadores 2025 Shots",
     page_icon=":soccer:",
     layout="centered"
 )
@@ -136,7 +136,7 @@ shot_type_radio = st.radio(
 
 # Pre-filter data based on selection
 current_data = df[df['isOnTarget'] == True] if shot_type_radio == "Shots On Target" else df
-goal_color = PURPLE if shot_type_radio == "Shots On Target" else NEON_GREEN
+goal_color = BRIGHT_PINK if shot_type_radio == "Shots On Target" else NEON_GREEN
 
 # Get team options
 team_display, display_to_team = prepare_options(current_data, 'teamName')
@@ -212,7 +212,7 @@ if team:
 
             st.markdown(f"""
             <div style="text-align: center;">
-                <div style="background-color: {BEAVER};
+                <div style="background-color: {VERMILION};
                            color: white;
                            border-radius: 12px;
                            padding: 10px;

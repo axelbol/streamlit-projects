@@ -12,21 +12,17 @@ def normalize_team_name(name):
     """Normalize team name by removing accents and standardizing format"""
     # Convert to lowercase
     name = name.lower()
-
     # Remove accents
     name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('utf-8')
-
     # Remove non-alphanumeric characters and standardize spaces
     name = re.sub(r'[^\w\s]', '', name)
     name = re.sub(r'\s+', ' ', name).strip()
-
     return name
 
 def create_team_mapping(h_team, a_team, known_aliases=None):
     """Create a mapping dictionary for home and away teams with their possible variations"""
     if known_aliases is None:
         known_aliases = {}
-
     # Normalize the official team names
     norm_h = normalize_team_name(h_team)
     norm_a = normalize_team_name(a_team)
@@ -69,13 +65,32 @@ def extract_match_slug(url):
             return path_parts[match_index]
     return None
 
+def get_unique_filename(output_path, base_filename):
+    """Generate a unique filename by adding a suffix if the file already exists"""
+    # Split the filename into name and extension
+    name, ext = os.path.splitext(base_filename)
+
+    # Start with original filename
+    filename = base_filename
+    counter = 1
+
+    # Check if file exists and increment counter until we find a unique name
+    while os.path.exists(os.path.join(output_path, filename)):
+        filename = f"{name}-{counter}{ext}"
+        counter += 1
+
+    return filename
+
 def scrape_shots_data(url, output_path):
     # Extract match slug for filename
     match_slug = extract_match_slug(url)
     if not match_slug:
         raise ValueError("Could not extract match slug from URL. Please check the URL format.")
 
-    output_filename = f"{match_slug}.csv"
+    base_filename = f"{match_slug}.csv"
+
+    # Generate a unique filename to avoid overwriting existing files
+    output_filename = get_unique_filename(output_path, base_filename)
 
     # Make request and parse HTML
     r = requests.get(url)
@@ -145,6 +160,7 @@ def scrape_shots_data(url, output_path):
     # Save to CSV
     full_path = os.path.join(output_path, output_filename)
     df_shots.to_csv(full_path, index=False)
+
     print(f"Data successfully saved to {full_path}")
     print(f"Match slug: {match_slug}")
     print(f"Home team: {h_team}, Away team: {a_team}")
