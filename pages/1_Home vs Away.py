@@ -8,8 +8,8 @@ import plotly.graph_objects as go
 BACK_COLOR = '#2C3E50'
 CLEAN_WHITE = '#FFFFFF'
 NEON_GREEN = '#06D6A0'
-PURPLE = '#684756'
-BEAVER = '#AB8476'
+VERMILION = '#F64740'
+BRIGHT_PINK = '#FF6F61'
 
 # Add caching to data loading
 @st.cache_data
@@ -69,7 +69,7 @@ shots = load_data()
 tab1, tab2, tab3 = st.tabs(["Shots Taken", "Shots On Target", "Home vs Away"])
 
 with tab1:
-    st.subheader("Home vs Away Performance")
+    st.subheader("Shot Count per Team (Home vs Away)")
 
     # Group by teamName and h_a
     grouped = shots.groupby(['teamName', 'h_a']).size().reset_index(name='count')
@@ -97,29 +97,37 @@ with tab1:
     fig.add_trace(go.Bar(
         x=teams,
         y=home_counts,
-        name='Home (h)',
-        marker_color=NEON_GREEN
+        name='Home',
+        marker_color=NEON_GREEN,
+        hovertemplate='<span style="color: CLEAN_WHITE; background-color: rgba(211, 211, 211, 0.8); padding: 2px 5px; border-radius: 3px;">%{x}</span><br>' + '<span style="color: ' + CLEAN_WHITE + '; background-color: black; padding: 2px 5px; border-radius: 3px;">Home: %{y}</span><extra></extra>'
     ))
 
     # Away bar stacked on top
     fig.add_trace(go.Bar(
         x=teams,
         y=away_counts,
-        name='Away (a)',
-        marker_color=PURPLE
+        name='Away',
+        marker_color=BRIGHT_PINK,
+        hovertemplate='<span style="color: CLEAN_WHITE; background-color: rgba(211, 211, 211, 0.8); padding: 2px 5px; border-radius: 3px;">%{x}</span><br>' + '<span style="color: ' + CLEAN_WHITE + '; background-color: black; padding: 2px 5px; border-radius: 3px;">Away: %{y}</span><extra></extra>'
     ))
 
     fig.update_layout(
         barmode='stack',
         title='Shot Count per Team (Home vs Away)',
-        xaxis_title='Team Name',
+        #xaxis_title='Team Name',
         yaxis_title='Number of Shots',
+        yaxis_title_font=dict(size=18, color=CLEAN_WHITE),
         legend_title='Location',
         xaxis_tickangle=-45,
         height=600,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color=CLEAN_WHITE)
+        font=dict(color=CLEAN_WHITE),
+        yaxis=dict(
+            title_font=dict(size=18, color=CLEAN_WHITE),
+            tickfont=dict(size=14, color=CLEAN_WHITE),
+            showgrid=False
+        ),
     )
 
     # Display plotly chart
