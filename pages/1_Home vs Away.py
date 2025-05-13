@@ -116,8 +116,8 @@ with tab1:
         barmode='stack',
         # title='Shot Count per Team (Home vs Away)',
         # xaxis_title='Team Name',
-        yaxis_title='Number of Shots',
-        yaxis_title_font=dict(size=18, color=CLEAN_WHITE),
+        # yaxis_title='Number of Shots',
+        # yaxis_title_font=dict(size=18, color=CLEAN_WHITE),
         legend=dict(
             # title='Location',
             orientation="h",
