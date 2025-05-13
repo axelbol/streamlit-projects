@@ -69,6 +69,7 @@ shots = load_data()
 tab1, tab2, tab3 = st.tabs(["Shots Taken", "Shots On Target", "Home vs Away"])
 
 with tab1:
+    # Sub header title
     st.subheader("Shot Count per Team (Home vs Away)")
 
     # Group by teamName and h_a
@@ -113,11 +114,20 @@ with tab1:
 
     fig.update_layout(
         barmode='stack',
-        title='Shot Count per Team (Home vs Away)',
-        #xaxis_title='Team Name',
+        # title='Shot Count per Team (Home vs Away)',
+        # xaxis_title='Team Name',
         yaxis_title='Number of Shots',
         yaxis_title_font=dict(size=18, color=CLEAN_WHITE),
-        legend_title='Location',
+        legend=dict(
+            # title='Location',
+            orientation="h",
+            yanchor="top",
+            y=1.1,
+            xanchor="right",
+            x=1,
+            bgcolor='rgba(0,0,0,0)',
+            font=dict(size=14, color=CLEAN_WHITE)
+        ),
         xaxis_tickangle=-45,
         height=600,
         paper_bgcolor='rgba(0,0,0,0)',
@@ -128,6 +138,7 @@ with tab1:
             tickfont=dict(size=14, color=CLEAN_WHITE),
             showgrid=False
         ),
+        margin=dict(t=70, b=100)  # Adjust margins to accommodate the legend
     )
 
     # Display plotly chart
