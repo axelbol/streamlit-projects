@@ -3,6 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mplsoccer import VerticalPitch
 import plotly.graph_objects as go
+import streamlit.components.v1 as components
+# Add JS listener to receive postMessage and update session state
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+from streamlit_js_eval import streamlit_js_eval
 
 # Colors
 BACK_COLOR = '#2C3E50'
@@ -59,11 +63,33 @@ st.sidebar.title('🏆 LIBERViZ')
 st.sidebar.info("Note:\nShots taken in the **Copa Libertadores 2025**.")
 st.sidebar.caption(
     "Want to see something else related to [Libertadores](https://www.conmebollibertadores.com/)? "
-    "Feel free to send me a message [axelbol](https://x.com/axel_bol)."
+    "Feel free to send me a message [axel_bol](https://x.com/axel_bol)."
 )
 
 # Load data once
 shots = load_data()
+
+# JavaScript to send screen width to Streamlit via Streamlit's `postMessage` interface
+components.html(
+    """
+    <script>
+    const width = window.innerWidth;
+    window.parent.postMessage({ type: 'STREAMLIT_SET_SCREEN_WIDTH', width: width }, '*');
+    </script>
+    """,
+    height=0,
+)
+# Listen for screen width messages
+if "screen_width" not in st.session_state:
+    st.session_state["screen_width"] = 1000  # default for desktop
+
+# Evaluate JS expression to get window.innerWidth
+width = streamlit_js_eval(js_expressions="window.innerWidth", key="WIDTH")
+# Store width in session state (optional)
+if width is not None:
+    st.session_state["screen_width"] = width
+else:
+    st.session_state["screen_width"] = 1000  # fallback
 
 # Create tabs for different visualizations
 tab1, tab2, tab3 = st.tabs(["Shots Taken", "Shots On Target", "Home vs Away"])
@@ -86,9 +112,18 @@ with tab1:
     # Sort by total count
     pivot_df['total'] = pivot_df.sum(axis=1)
     pivot_df = pivot_df.sort_values('total', ascending=False)
+
+    # Determine if mobile
+    is_mobile = st.session_state.get("screen_width", 1000) <= 640
+
+    # Limit to top 10 teams on mobile
+    if is_mobile:
+        pivot_df = pivot_df.head(10)
+
     teams = pivot_df.index.tolist()
     home_counts = pivot_df['h']
     away_counts = pivot_df['a']
+
     pivot_df = pivot_df.drop(columns='total')
 
     # Plot with Plotly
@@ -117,7 +152,6 @@ with tab1:
         # title='Shot Count per Team (Home vs Away)',
         # xaxis_title='Team Name',
         # yaxis_title='Number of Shots',
-        # yaxis_title_font=dict(size=18, color=CLEAN_WHITE),
         legend=dict(
             # title='Location',
             orientation="h",
@@ -136,10 +170,15 @@ with tab1:
         yaxis=dict(
             title_font=dict(size=18, color=CLEAN_WHITE),
             tickfont=dict(size=14, color=CLEAN_WHITE),
-            showgrid=False
+            showgrid=False,
+            range=[0, pivot_df.sum(axis=1).max() * 1.1],  # Set y-axis range from 0 to 10% above max value
+            fixedrange=True  # Prevent zooming/panning that would change this range
         ),
         margin=dict(t=70, b=100)  # Adjust margins to accommodate the legend
     )
+
+    if is_mobile:
+        st.info("📱 Top 10 teams with most shots taken Home & Away shown on mobile")
 
     # Display plotly chart
     st.plotly_chart(fig, use_container_width=True)

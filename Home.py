@@ -121,7 +121,7 @@ st.sidebar.title('🏆 LIBERViZ')
 st.sidebar.info("Note:\nShots taken in the **Copa Libertadores 2025**.")
 st.sidebar.caption(
     "Want to see something else related to [Libertadores](https://www.conmebollibertadores.com/)? "
-    "Feel free to send me a message [axelbol](https://x.com/axel_bol)."
+    "Feel free to send me a message [axel_bol](https://x.com/axel_bol)."
 )
 
 # Load data once
