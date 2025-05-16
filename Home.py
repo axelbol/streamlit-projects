@@ -112,8 +112,27 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Load data once
+df = load_data()
+
 # Main title
 st.title('Libertadores 2025 Shot Map')
+
+# General info
+teams = df['teamId'].nunique()
+players = df['playerId'].nunique()
+shots = len(df)
+avg_xG = df['expectedGoals'].mean()
+
+a, b = st.columns(2)
+c, d = st.columns(2)
+
+a.metric(label="Teams", value=teams, delta=f"{int(teams)} shots", delta_color="normal", border=True)
+b.metric(label="Players", value=players, delta=f"{int(players)} shots", delta_color="normal", border=True)
+
+c.metric(label="Shots", value=shots, delta=f"{int(shots)} shots", delta_color="normal", border=True)
+d.metric(label="xG", value=f"{avg_xG:.3f}", delta=f"{int(avg_xG)} shots", delta_color="normal", border=True)
+
 st.header('Filter by any team/player to see all their shots taken')
 
 # Side Bar
@@ -123,9 +142,6 @@ st.sidebar.caption(
     "Want to see something else related to [Libertadores](https://www.conmebollibertadores.com/)? "
     "Feel free to send me a message [axel_bol](https://x.com/axel_bol)."
 )
-
-# Load data once
-df = load_data()
 
 # Add radio buttons for shot type selection
 shot_type_radio = st.radio(
@@ -165,7 +181,7 @@ if player:
     filtered_df = filtered_df[filtered_df['playerName'] == player]
 
 # Create plot
-with st.spinner("Drawing pitch and shots..."):
+with st.spinner("Drawing pitch and shots...", show_time=True):
     fig, ax = plt.subplots(figsize=(10, 10))
     fig.patch.set_facecolor(BACK_COLOR)
 
