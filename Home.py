@@ -148,9 +148,14 @@ team = display_to_team.get(team_display_selected, None)
 # Get player options based on team selection
 player_display, display_to_player = prepare_player_options(current_data, team)
 
-# Player selection
-player_display_selected = st.selectbox('Select a player', player_display, index=None, placeholder='Select a player')
-player = display_to_player.get(player_display_selected, None)
+# Player selection - disabled if no team is selected
+if team:
+    player_display_selected = st.selectbox('Select a player', player_display, index=None, placeholder='Select a player')
+    player = display_to_player.get(player_display_selected, None)
+else:
+    # Display disabled dropdown when no team is selected
+    st.selectbox('Select a player', [], disabled=True, placeholder='Select a team first')
+    player = None
 
 # Filter data based on selections
 filtered_df = current_data
