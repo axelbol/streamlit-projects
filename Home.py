@@ -121,17 +121,20 @@ st.title('Libertadores 2025 Shot Map')
 # General info
 teams = df['teamId'].nunique()
 players = df['playerId'].nunique()
+keepers = df['keeperId'].nunique()
 shots = len(df)
-avg_xG = df['expectedGoals'].mean()
+isOnTarget = len(df[df['isOnTarget'] == True])
+goals = len(df[df['eventType'] == 'Goal'])
+ownGoal = len(df[df['isOwnGoal'] == True])
 
 a, b = st.columns(2)
 c, d = st.columns(2)
 
-a.metric(label="Teams", value=teams, delta=f"{int(teams)} shots", delta_color="normal", border=True)
-b.metric(label="Players", value=players, delta=f"{int(players)} shots", delta_color="normal", border=True)
+a.metric(label="Teams", value=teams, delta=f"{-(8)} Copa Sudamericana", delta_color="normal", border=True)
+b.metric(label="Players", value=players, delta=f"{int(keepers)} keepers", delta_color="normal", border=True)
 
-c.metric(label="Shots", value=shots, delta=f"{int(shots)} shots", delta_color="normal", border=True)
-d.metric(label="xG", value=f"{avg_xG:.3f}", delta=f"{int(avg_xG)} shots", delta_color="normal", border=True)
+c.metric(label="Shots", value=shots, delta=f"{int(isOnTarget)} shots on target", delta_color="normal", border=True)
+d.metric(label="Goals", value=goals, delta=f"{-(ownGoal)} own goals", delta_color="normal", border=True)
 
 st.header('Filter by any team/player to see all their shots taken')
 
