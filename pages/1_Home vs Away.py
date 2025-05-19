@@ -3,9 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mplsoccer import VerticalPitch
 import plotly.graph_objects as go
-import streamlit.components.v1 as components
-# Add JS listener to receive postMessage and update session state
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 from streamlit_js_eval import streamlit_js_eval
 
 # Colors
@@ -54,9 +51,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Load data once
+shots = load_data()
+
 # Main title
 st.title('Libertadores 2025')
 st.header('Home vs Away performance')
+
+# General info
+teams = shots['teamId'].nunique()
+players = shots['playerId'].nunique()
+keepers = shots['keeperId'].nunique()
+shots_len = len(shots)
+isOnTarget = len(shots[shots['isOnTarget'] == True])
+goals = len(shots[shots['eventType'] == 'Goal'])
+ownGoal = len(shots[shots['isOwnGoal'] == True])
+
+a, b = st.columns(2)
+c, d = st.columns(2)
+
+a.metric(label="Teams", value=teams, delta=f"{-(8)} Copa Sudamericana", delta_color="normal", border=True)
+b.metric(label="Players", value=players, delta=f"{int(keepers)} keepers", delta_color="normal", border=True)
+
+c.metric(label="Shots", value=shots_len, delta="1.2 °F", delta_color="normal", border=True)
+d.metric(label="Goals", value=goals, delta=f"{-(ownGoal)} own goals", delta_color="normal", border=True)
 
 # Side Bar
 st.sidebar.title('🏆 LIBERViZ')
@@ -66,30 +84,14 @@ st.sidebar.caption(
     "Feel free to send me a message [axel_bol](https://x.com/axel_bol)."
 )
 
-# Load data once
-shots = load_data()
-
-# JavaScript to send screen width to Streamlit via Streamlit's `postMessage` interface
-components.html(
-    """
-    <script>
-    const width = window.innerWidth;
-    window.parent.postMessage({ type: 'STREAMLIT_SET_SCREEN_WIDTH', width: width }, '*');
-    </script>
-    """,
-    height=0,
-)
-# Listen for screen width messages
+# Get screen width with streamlit_js_eval - more efficient approach
 if "screen_width" not in st.session_state:
     st.session_state["screen_width"] = 1000  # default for desktop
 
-# Evaluate JS expression to get window.innerWidth
-width = streamlit_js_eval(js_expressions="window.innerWidth", key="WIDTH")
-# Store width in session state (optional)
+# This call doesn't create visual elements and won't create a gap
+width = streamlit_js_eval(js_expressions="window.innerWidth", key="WIDTH", want_output=True)
 if width is not None:
     st.session_state["screen_width"] = width
-else:
-    st.session_state["screen_width"] = 1000  # fallback
 
 # Create tabs for different visualizations
 tab1, tab2, tab3 = st.tabs(["Shots Taken", "Shots On Target", "Home vs Away"])
