@@ -55,26 +55,8 @@ st.markdown("""
 shots = load_data()
 
 # Main title
-st.title('Libertadores 2025')
+st.title('Copa Libertadores 2025')
 st.header('Home vs Away performance')
-
-# General info
-teams = shots['teamId'].nunique()
-players = shots['playerId'].nunique()
-keepers = shots['keeperId'].nunique()
-shots_len = len(shots)
-isOnTarget = len(shots[shots['isOnTarget'] == True])
-goals = len(shots[shots['eventType'] == 'Goal'])
-ownGoal = len(shots[shots['isOwnGoal'] == True])
-
-a, b = st.columns(2)
-c, d = st.columns(2)
-
-a.metric(label="Teams", value=teams, delta=f"{-(8)} Copa Sudamericana", delta_color="normal", border=True)
-b.metric(label="Players", value=players, delta=f"{int(keepers)} keepers", delta_color="normal", border=True)
-
-c.metric(label="Shots", value=shots_len, delta="1.2 °F", delta_color="normal", border=True)
-d.metric(label="Goals", value=goals, delta=f"{-(ownGoal)} own goals", delta_color="normal", border=True)
 
 # Side Bar
 st.sidebar.title('🏆 LIBERViZ')
@@ -97,6 +79,41 @@ if width is not None:
 tab1, tab2, tab3 = st.tabs(["Shots Taken", "Shots On Target", "Home vs Away"])
 
 with tab1:
+    # General info
+    # Display the team with the most home & away shots
+    col1, col2 = st.columns(2)
+    # Filter rows where h_a is 'h'
+    home_teams = shots[shots['h_a'] == 'h']
+    # Group by teamName and count occurrences
+    team_counts_h = home_teams['teamName'].value_counts()
+    # Get the team with the highest count
+    most_frequent_home_team = team_counts_h.idxmax()
+    count_home_most_shots = team_counts_h.max()
+    with col1:
+        st.metric(label="Team with Most Home Shots", value=most_frequent_home_team, delta=f"{int(count_home_most_shots)} shots", border=True)
+    # Filter rows where h_a is 'a'
+    away_teams = shots[shots['h_a'] == 'a']
+    # Group by teamName and count occurrences
+    team_counts_a = away_teams['teamName'].value_counts()
+    # Get the team with the highest count
+    most_frequent_away_team = team_counts_a.idxmax()
+    count_away_most_shots = team_counts_a.max()
+    with col2:
+        st.metric(label="Team with Most Away Shots", value=most_frequent_away_team, delta=f"{int(count_away_most_shots)} shots", border=True)
+
+    # Display the team with the most home & away shots
+    col3, col4 = st.columns(2)
+    # Get the h team with the lowest count
+    least_frequent_home_team = team_counts_h.idxmin()
+    count_home_least_shots = team_counts_h.min()
+    with col3:
+        st.metric(label="Team with Least Home Shots", value=least_frequent_home_team, delta=f"{(int(count_home_least_shots))} shots", delta_color="inverse", border=True)
+    # Get the h team with the lowest count
+    least_frequent_away_team = team_counts_a.idxmin()
+    count_away_least_shots = team_counts_a.min()# Filter rows where h_a is 'a'
+    with col4:
+        st.metric(label="Team with Least Away Shots", value=least_frequent_away_team, delta=f"{(int(count_away_least_shots))} shots", delta_color="inverse", border=True)
+
     # Sub header title
     st.subheader("Shot Count per Team (Home vs Away)")
 
@@ -188,25 +205,6 @@ with tab1:
     # Display the data table
     st.dataframe(pivot_df.rename(columns={'h': 'Home Shots', 'a': 'Away Shots'}),
                  use_container_width=True)
-
-    # Add some insights
-    st.subheader("Insights")
-
-    # Calculate team with most home shots
-    max_home_team = home_counts.idxmax()
-    max_home_shots = home_counts.max()
-
-    # Calculate team with most away shots
-    max_away_team = away_counts.idxmax()
-    max_away_shots = away_counts.max()
-
-    # Display insights
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric(label="Team with Most Home Shots", value=max_home_team, delta=f"{int(max_home_shots)} shots")
-
-    with col2:
-        st.metric(label="Team with Most Away Shots", value=max_away_team, delta=f"{int(max_away_shots)} shots")
 
 with tab2:
     st.subheader("Shot Map Visualization")
