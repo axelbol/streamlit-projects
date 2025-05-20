@@ -24,6 +24,10 @@ st.set_page_config(
     layout="centered"
 )
 
+import time
+st.toast('Just click on the column name', icon='👀')
+st.toast('You can order the table by Team Name, Home Shost or Away Shots', icon='🚩')
+
 # Styles
 st.markdown("""
     <style>
@@ -202,9 +206,18 @@ with tab1:
     # Display plotly chart
     st.plotly_chart(fig, use_container_width=True)
 
+    # Display the data table and reset index to make teamName a column and rename it
+    pivot_df = pivot_df.reset_index().rename(columns={
+        'teamName': 'Team Name',
+        'h': 'Home Shots',
+        'a': 'Away Shots'
+    })
+
+    # Reorder columns
+    pivot_df = pivot_df[['Team Name', 'Home Shots', 'Away Shots']]
+
     # Display the data table
-    st.dataframe(pivot_df.rename(columns={'h': 'Home Shots', 'a': 'Away Shots'}),
-                 use_container_width=True)
+    st.dataframe(pivot_df, use_container_width=True, hide_index=True)
 
 with tab2:
     st.subheader("Shot Map Visualization")
