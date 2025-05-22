@@ -278,10 +278,43 @@ def create_shots_tab(shots, screen_width):
     display_df = prepare_display_dataframe(pivot_df)
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-def create_shots_on_target_tab():
+def create_shots_on_target_tab(shots, screen_width):
     """Create content for the Shots On Target tab."""
-    st.subheader("Shot Map Visualization")
-    st.info("Shot map visualization will be displayed here. Add your mplsoccer code.")
+    # Filter for shots on target only
+    shots_on_target = shots[shots['isOnTarget'] == True]
+
+    # Check if mobile
+    is_mobile = screen_width <= 640
+
+    # Get team statistics for shots on target
+    team_stats = get_team_stats(shots_on_target)
+
+    # Display team metrics
+    display_team_metrics(team_stats)
+
+    # Sub header title
+    st.subheader("Shots On Target per Team (Home vs Away)")
+
+    # Prepare data
+    pivot_df = prepare_pivot_data(shots_on_target, is_mobile)
+
+    # Create and display chart
+    fig = create_stacked_bar_chart(pivot_df)
+
+    if is_mobile:
+        st.info("📱 Top 10 teams with most shots on target Home & Away shown on mobile")
+
+    # Display plotly chart
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Prepare and display dataframe
+    display_df = prepare_display_dataframe(pivot_df)
+    # Update column names to reflect shots on target
+    display_df = display_df.rename(columns={
+        'Home Shots': 'Home Shots On Target',
+        'Away Shots': 'Away Shots On Target'
+    })
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 def create_home_vs_away_tab():
     """Create content for the Home vs Away tab."""
@@ -313,7 +346,7 @@ def main():
         create_shots_tab(shots, screen_width)
 
     with tab2:
-        create_shots_on_target_tab()
+        create_shots_on_target_tab(shots, screen_width)
 
     with tab3:
         create_home_vs_away_tab()
