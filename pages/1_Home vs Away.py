@@ -169,11 +169,27 @@ def prepare_pivot_data(shots, is_mobile=False):
 
     return pivot_df
 
-def create_stacked_bar_chart(pivot_df):
+def create_stacked_bar_chart(pivot_df, chart_type="shots"):
     """Create a stacked bar chart for home and away shots."""
     teams = pivot_df.index.tolist()
     home_counts = pivot_df['h']
     away_counts = pivot_df['a']
+
+    # Calculate the maximum total value for setting y-axis range
+    max_total = (pivot_df['h'] + pivot_df['a']).max()
+
+    # Set y-axis range and tick interval based on chart type
+    if chart_type == "shots":
+        y_max = 100
+        dtick = 20
+    else:  # shots_on_target
+        y_max = 60
+        dtick = 10
+
+    # Ensure the range covers the data, but use our preferred maximum if data fits
+    if max_total > y_max:
+        y_max = int((max_total + 9) // 10 * 10)  # Round up to nearest 10
+        dtick = max(10, y_max // 5)  # Adjust tick interval accordingly
 
     # Plot with Plotly
     fig = go.Figure()
@@ -218,8 +234,8 @@ def create_stacked_bar_chart(pivot_df):
             title_font=dict(size=18, color=COLORS['CLEAN_WHITE']),
             tickfont=dict(size=14, color=COLORS['CLEAN_WHITE']),
             showgrid=False,
-            dtick=20,  # Set tick marks every 20 units
-            range=[0, 100],  # Fixed range from 0 to 100
+            dtick=dtick,  # Dynamic tick marks
+            range=[0, y_max],  # Dynamic range
             fixedrange=True  # Prevent zooming/panning that would change this range
         ),
         margin=dict(t=70, b=100)  # Adjust margins to accommodate the legend
@@ -265,8 +281,8 @@ def create_shots_tab(shots, screen_width):
     # Prepare data
     pivot_df = prepare_pivot_data(shots, is_mobile)
 
-    # Create and display chart
-    fig = create_stacked_bar_chart(pivot_df)
+    # Create and display chart with shots type
+    fig = create_stacked_bar_chart(pivot_df, chart_type="shots")
 
     if is_mobile:
         st.info("📱 Top 10 teams with most shots taken Home & Away shown on mobile")
@@ -298,8 +314,8 @@ def create_shots_on_target_tab(shots, screen_width):
     # Prepare data
     pivot_df = prepare_pivot_data(shots_on_target, is_mobile)
 
-    # Create and display chart
-    fig = create_stacked_bar_chart(pivot_df)
+    # Create and display chart with shots_on_target type
+    fig = create_stacked_bar_chart(pivot_df, chart_type="shots_on_target")
 
     if is_mobile:
         st.info("📱 Top 10 teams with most shots on target Home & Away shown on mobile")
