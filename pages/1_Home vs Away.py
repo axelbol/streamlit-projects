@@ -225,7 +225,10 @@ def create_stacked_bar_chart(pivot_df, chart_type="shots"):
             bgcolor='rgba(0,0,0,0)',
             font=dict(size=14, color=COLORS['CLEAN_WHITE'])
         ),
-        xaxis_tickangle=-45,
+        xaxis=dict(
+            tickangle=-45,
+            fixedrange=True  # Disable zoom/pan on x-axis
+        ),
         height=600,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -288,7 +291,11 @@ def create_shots_tab(shots, screen_width):
         st.info("📱 Top 10 teams with most shots taken Home & Away shown on mobile")
 
     # Display plotly chart
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={
+        'scrollZoom': False,      # Disable scroll zoom
+        'doubleClick': False,     # Disable double-click zoom
+        'displayModeBar': False   # Hide the toolbar completely
+    })
 
     # Prepare and display dataframe
     display_df = prepare_display_dataframe(pivot_df)
@@ -321,7 +328,11 @@ def create_shots_on_target_tab(shots, screen_width):
         st.info("📱 Top 10 teams with most shots on target Home & Away shown on mobile")
 
     # Display plotly chart
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={
+        'scrollZoom': False,      # Disable scroll zoom
+        'doubleClick': False,     # Disable double-click zoom
+        'displayModeBar': False   # Hide the toolbar completely
+    })
 
     # Prepare and display dataframe
     display_df = prepare_display_dataframe(pivot_df)

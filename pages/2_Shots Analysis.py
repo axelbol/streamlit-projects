@@ -199,7 +199,8 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
             ),
             gridcolor='lightgray',  # Add this line for grid color
             gridwidth=1,
-            showgrid=True
+            showgrid=True,
+            fixedrange=True  # Disable zoom/pan on x-axis
         ),
         yaxis=dict(
             tickfont=dict(
@@ -209,7 +210,8 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
             ),
             gridcolor='rgba(200, 200, 200, 0.5)',  # Add this line for grid color
             gridwidth=1,
-            showgrid=True
+            showgrid=True,
+            fixedrange=True  # Disable zoom/pan on y-axis
         ),
         plot_bgcolor='#eaf4f4',
         paper_bgcolor='#eaf4f4',
@@ -331,9 +333,9 @@ def main():
             logos_folder = 'logos'  # Adjust this path as needed
 
             if os.path.exists(logos_folder):
-                # Create and display the plotly visualization
+                # Create and display the plotly visualization with disabled zoom/pan
                 fig = create_plotly_viz_with_logos(team_data, logos_folder)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': False, 'doubleClick': False, 'displayModeBar': False})
             else:
                 st.warning(f"⚠️ Logos folder not found at '{logos_folder}'. Displaying chart without logos.")
                 # Create a simple version without logos
@@ -354,9 +356,11 @@ def main():
                     title='Volume of Shots vs Quality of Chances Conceded',
                     xaxis_title='Shots Conceded per Game',
                     yaxis_title='xG Conceded per Shot',
-                    height=600
+                    height=600,
+                    xaxis=dict(fixedrange=True),  # Disable zoom/pan on x-axis
+                    yaxis=dict(fixedrange=True)   # Disable zoom/pan on y-axis
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': False, 'doubleClick': False, 'displayModeBar': False})
 
         with tab2:
             display_team_statistics(team_data)
