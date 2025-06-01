@@ -3,3 +3,4 @@ pandas
 mplsoccer
 plotly
 streamlit_js_eval
+kaleido
