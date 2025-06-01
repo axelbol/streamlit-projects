@@ -4,7 +4,9 @@ import plotly.graph_objects as go
 import numpy as np
 import base64
 import os
+import io
 from PIL import Image
+from streamlit_js_eval import streamlit_js_eval
 
 # Add caching to data loading
 @st.cache_data
@@ -33,8 +35,25 @@ def apply_custom_styles():
                 padding-bottom: 1rem;
             }
             MainMenu, footer, header {visibility: hidden;}
+
+            /* Mobile responsiveness */
+            @media screen and (max-width: 640px) {
+                .st-emotion-cache-16txtl3 h1 {font-size: 1.5rem !important;}
+                .st-emotion-cache-16txtl3 h2, .st-emotion-cache-16txtl3 h3 {font-size: 1.2rem !important;}
+            }
         </style>
     """, unsafe_allow_html=True)
+
+def get_screen_width():
+    """Get the screen width using JS evaluation."""
+    if "screen_width" not in st.session_state:
+        st.session_state["screen_width"] = 1000  # default for desktop
+
+    width = streamlit_js_eval(js_expressions="window.innerWidth", key="WIDTH", want_output=True)
+    if width is not None:
+        st.session_state["screen_width"] = width
+
+    return st.session_state["screen_width"]
 
 def setup_sidebar():
     """Configure the sidebar."""
@@ -96,10 +115,17 @@ def prepare_team_data(shots_df):
 
     return team_stats
 
-def create_plotly_viz_with_logos(team_stats, logos_path):
+def create_plotly_viz_with_logos(team_stats, logos_path, is_mobile=False):
     """
     Create interactive Plotly scatter plot with team logos
     """
+    # Adjust size and layout for mobile
+    width = 400 if is_mobile else 1000
+    height = 500 if is_mobile else 700
+    logo_size = (20, 20) if is_mobile else (30, 30)
+    sizex = 0.3 if is_mobile else 0.4
+    sizey = 0.006 if is_mobile else 0.008
+
     # Create the scatter plot
     fig = go.Figure()
 
@@ -141,7 +167,7 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
 
         if os.path.exists(logo_path):
             # Resize logo for consistency
-            resized_path = resize_logo(logo_path, size=(30, 30))
+            resized_path = resize_logo(logo_path, size=logo_size)
             encoded_image = encode_image(resized_path)
 
             if encoded_image:
@@ -151,8 +177,8 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
                     yref="y",
                     x=row['shots_conceded_per_game'],
                     y=row['xg_conceded_per_shot'],
-                    sizex=0.4,  # Adjust size as needed
-                    sizey=0.008,  # Adjust size as needed
+                    sizex=sizex,  # Adjust size as needed
+                    sizey=sizey,  # Adjust size as needed
                     xanchor="center",
                     yanchor="middle",
                     layer="above"
@@ -174,6 +200,12 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
     fig.add_hline(y=median_xg, line_dash="dash", line_color="gray", opacity=0.5)
     fig.add_vline(x=median_shots, line_dash="dash", line_color="gray", opacity=0.5)
 
+    # Adjust font sizes for mobile
+    title_size = 16 if is_mobile else 20
+    axis_title_size = 12 if is_mobile else 16
+    tick_size = 10 if is_mobile else 12
+    annotation_size = 10 if is_mobile else 14
+
     # Update layout with images
     fig.update_layout(
         images=images,
@@ -181,21 +213,21 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
             'text': 'Volume of Shots vs Quality of Chances Conceded',
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'family': 'Arial Black', 'color': '#000000'}
+            'font': {'size': title_size, 'family': 'Arial Black', 'color': '#000000'}
         },
         xaxis_title={
             'text': 'Shots conceded per Game',
-            'font': {'size': 16, 'family': 'Arial Black', 'color': '#000000'}
+            'font': {'size': axis_title_size, 'family': 'Arial Black', 'color': '#000000'}
         },
         yaxis_title={
             'text': 'xG conceded per Shot',
-            'font': {'size': 16, 'family': 'Arial Black', 'color': '#000000'}
+            'font': {'size': axis_title_size, 'family': 'Arial Black', 'color': '#000000'}
         },
         xaxis=dict(
             tickfont=dict(
                 color='#000000',  # Change to your desired color for x-axis numbers
                 family='Arial Black',
-                size=12
+                size=tick_size
             ),
             gridcolor='lightgray',  # Add this line for grid color
             gridwidth=1,
@@ -206,7 +238,7 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
             tickfont=dict(
                 color='#000000',  # Change to your desired color for y-axis numbers
                 family='Arial Black',
-                size=12,
+                size=tick_size,
             ),
             gridcolor='rgba(200, 200, 200, 0.5)',  # Add this line for grid color
             gridwidth=1,
@@ -215,40 +247,41 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
         ),
         plot_bgcolor='#eaf4f4',
         paper_bgcolor='#eaf4f4',
-        font=dict(family="Arial", size=12),
-        width=1000,
-        height=700,
-        margin=dict(t=80, b=60, l=80, r=100)
+        font=dict(family="Arial", size=10 if is_mobile else 12),
+        width=width,
+        height=height,
+        margin=dict(t=60 if is_mobile else 80, b=40 if is_mobile else 60,
+                   l=60 if is_mobile else 80, r=80 if is_mobile else 100)
     )
 
     # Add quadrant annotations
     x_range = team_stats['shots_conceded_per_game'].max() - team_stats['shots_conceded_per_game'].min()
     y_range = team_stats['xg_conceded_per_shot'].max() - team_stats['xg_conceded_per_shot'].min()
 
-    # Add annotations for quadrants
-    annotations = [
-        dict(x=team_stats['shots_conceded_per_game'].min() + x_range*0.1,
-             y=team_stats['xg_conceded_per_shot'].max() - y_range*0.1,
-             text="Low Shots Conceded,<br>High xG per Shot",
-             showarrow=False, font=dict(color="black", size=14)),
+    # Add annotations for quadrants (simplified for mobile)
+    if not is_mobile:
+        annotations = [
+            dict(x=team_stats['shots_conceded_per_game'].min() + x_range*0.1,
+                 y=team_stats['xg_conceded_per_shot'].max() - y_range*0.1,
+                 text="Low Shots Conceded,<br>High xG per Shot",
+                 showarrow=False, font=dict(color="black", size=annotation_size)),
 
-        dict(x=team_stats['shots_conceded_per_game'].max() - x_range*0.1,
-             y=team_stats['xg_conceded_per_shot'].max() - y_range*0.1,
-             text="High Shots Conceded,<br>High xG per Shot",
-             showarrow=False, font=dict(color="red", size=14)),
+            dict(x=team_stats['shots_conceded_per_game'].max() - x_range*0.1,
+                 y=team_stats['xg_conceded_per_shot'].max() - y_range*0.1,
+                 text="High Shots Conceded,<br>High xG per Shot",
+                 showarrow=False, font=dict(color="red", size=annotation_size)),
 
-        dict(x=team_stats['shots_conceded_per_game'].min() + x_range*0.1,
-             y=team_stats['xg_conceded_per_shot'].min() + y_range*0.1,
-             text="Low Shots Conceded,<br>Low xG per Shot",
-             showarrow=False, font=dict(color="green", size=14)),
+            dict(x=team_stats['shots_conceded_per_game'].min() + x_range*0.1,
+                 y=team_stats['xg_conceded_per_shot'].min() + y_range*0.1,
+                 text="Low Shots Conceded,<br>Low xG per Shot",
+                 showarrow=False, font=dict(color="green", size=annotation_size)),
 
-        dict(x=team_stats['shots_conceded_per_game'].max() - x_range*0.1,
-             y=team_stats['xg_conceded_per_shot'].min() + y_range*0.1,
-             text="High Shots Conceded,<br>Low xG per Shot",
-             showarrow=False, font=dict(color="black", size=14))
-    ]
-
-    fig.update_layout(annotations=annotations)
+            dict(x=team_stats['shots_conceded_per_game'].max() - x_range*0.1,
+                 y=team_stats['xg_conceded_per_shot'].min() + y_range*0.1,
+                 text="High Shots Conceded,<br>Low xG per Shot",
+                 showarrow=False, font=dict(color="black", size=annotation_size))
+        ]
+        fig.update_layout(annotations=annotations)
 
     # Add X account reference at bottom right
     fig.add_annotation(
@@ -256,13 +289,39 @@ def create_plotly_viz_with_logos(team_stats, logos_path):
         xref="paper", yref="paper",
         text="@axel_bol",
         showarrow=False,
-        font=dict(size=12, color='gray'),
+        font=dict(size=10 if is_mobile else 12, color='gray'),
         align="right",
         xanchor="right",
         yanchor="bottom"
     )
 
     return fig
+
+def generate_unique_filename(base_name, extension="png"):
+    """Generate a unique filename by adding numbers if file exists"""
+    filename = f"{base_name}.{extension}"
+    counter = 1
+
+    # This is a simulation since we can't actually check file system in Streamlit
+    # In practice, you might want to use session state to track downloads
+    if f"download_count_{base_name}" not in st.session_state:
+        st.session_state[f"download_count_{base_name}"] = 0
+
+    if st.session_state[f"download_count_{base_name}"] > 0:
+        filename = f"{base_name}_{st.session_state[f'download_count_{base_name}']}.{extension}"
+
+    st.session_state[f"download_count_{base_name}"] += 1
+    return filename
+
+def convert_plotly_to_image(fig):
+    """Convert Plotly figure to image bytes for download"""
+    try:
+        # Convert to image
+        img_bytes = fig.to_image(format="png", engine="kaleido")
+        return img_bytes
+    except Exception as e:
+        st.error(f"Error converting plot to image: {e}")
+        return None
 
 def display_team_statistics(team_stats):
     """Display team statistics in a formatted table"""
@@ -291,6 +350,7 @@ def main():
     # Setup
     setup_page_config()
     apply_custom_styles()
+    screen_width = get_screen_width()
 
     # Main title
     st.title('Copa Libertadores 2025')
@@ -298,6 +358,9 @@ def main():
 
     # Setup sidebar
     setup_sidebar()
+
+    # Check if mobile
+    is_mobile = screen_width <= 640
 
     # Load data
     try:
@@ -334,8 +397,46 @@ def main():
 
             if os.path.exists(logos_folder):
                 # Create and display the plotly visualization with disabled zoom/pan
-                fig = create_plotly_viz_with_logos(team_data, logos_folder)
-                st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': False, 'doubleClick': False, 'displayModeBar': False})
+                fig = create_plotly_viz_with_logos(team_data, logos_folder, is_mobile)
+
+                # Show mobile info and download button
+                if is_mobile:
+                    st.info("📱 Download the visualization to view it properly on mobile")
+
+                    # Create download button
+                    col_download, col_space = st.columns([2, 1])
+                    with col_download:
+                        if st.button("📥 Download Visualization", type="primary", use_container_width=True):
+                            try:
+                                # Convert plot to image
+                                img_bytes = convert_plotly_to_image(fig)
+
+                                if img_bytes:
+                                    # Generate unique filename
+                                    filename = generate_unique_filename("team_shots_libertadores25_axel_bol")
+
+                                    # Create download
+                                    st.download_button(
+                                        label=f"💾 Save as {filename}",
+                                        data=img_bytes,
+                                        file_name=filename,
+                                        mime="image/png",
+                                        use_container_width=True
+                                    )
+
+                                    # Show balloons after download button is created
+                                    st.balloons()
+                                    st.success(f"🎉 Visualization ready for download as {filename}!")
+                            except Exception as e:
+                                st.error(f"Error preparing download: {e}")
+                else:
+                    # Only show the chart on desktop
+                    st.plotly_chart(fig, use_container_width=True, config={
+                        'scrollZoom': False,
+                        'doubleClick': False,
+                        'displayModeBar': False
+                    })
+
             else:
                 st.warning(f"⚠️ Logos folder not found at '{logos_folder}'. Displaying chart without logos.")
                 # Create a simple version without logos
@@ -352,15 +453,48 @@ def main():
                              'xG per Shot: %{y:.3f}<br>' +
                              '<extra></extra>'
                 ))
+
+                # Adjust for mobile
+                width = 400 if is_mobile else 1000
+                height = 500 if is_mobile else 600
+
                 fig.update_layout(
                     title='Volume of Shots vs Quality of Chances Conceded',
                     xaxis_title='Shots Conceded per Game',
                     yaxis_title='xG Conceded per Shot',
-                    height=600,
+                    height=height,
+                    width=width,
                     xaxis=dict(fixedrange=True),  # Disable zoom/pan on x-axis
                     yaxis=dict(fixedrange=True)   # Disable zoom/pan on y-axis
                 )
-                st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': False, 'doubleClick': False, 'displayModeBar': False})
+
+                # Show mobile download option for simple chart too
+                if is_mobile:
+                    st.info("📱 Download the visualization to view it properly on mobile")
+
+                    if st.button("📥 Download Visualization", type="primary", use_container_width=True):
+                        try:
+                            img_bytes = convert_plotly_to_image(fig)
+                            if img_bytes:
+                                filename = generate_unique_filename("team_shots_libertadores25_axel_bol")
+                                st.download_button(
+                                    label=f"💾 Save as {filename}",
+                                    data=img_bytes,
+                                    file_name=filename,
+                                    mime="image/png",
+                                    use_container_width=True
+                                )
+                                st.balloons()
+                                st.success(f"🎉 Visualization ready for download as {filename}!")
+                        except Exception as e:
+                            st.error(f"Error preparing download: {e}")
+                else:
+                    # Only show the chart on desktop
+                    st.plotly_chart(fig, use_container_width=True, config={
+                        'scrollZoom': False,
+                        'doubleClick': False,
+                        'displayModeBar': False
+                    })
 
         with tab2:
             display_team_statistics(team_data)
