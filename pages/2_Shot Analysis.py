@@ -215,13 +215,13 @@ def add_quadrant_annotations(fig, team_stats, config):
              y=team_stats['xg_conceded_per_shot'].max() - y_range*0.1,
              text="High Shots Conceded,<br>High xG per Shot",
              showarrow=False,
-             font=dict(color="red", size=config['annotation_size'], family='Arial Black')),
+             font=dict(color="green", size=config['annotation_size'], family='Arial Black')),
 
         dict(x=team_stats['shots_conceded_per_game'].min() + x_range*0.1,
              y=team_stats['xg_conceded_per_shot'].min() + y_range*0.1,
              text="Low Shots Conceded,<br>Low xG per Shot",
              showarrow=False,
-             font=dict(color="green", size=config['annotation_size'], family='Arial Black')),
+             font=dict(color="red", size=config['annotation_size'], family='Arial Black')),
 
         dict(x=team_stats['shots_conceded_per_game'].max() - x_range*0.1,
              y=team_stats['xg_conceded_per_shot'].min() + y_range*0.1,
@@ -347,7 +347,7 @@ def convert_plotly_to_image(fig):
 
 def create_download_section(fig, team_data, is_mobile):
     """Create download section for mobile users"""
-    st.info("📱 On mobile? Use the download button below to save the visualization")
+    st.info("📱 On mobile? Use the download button below to save the visualization. This visualization looks better on destok devices.")
 
     try:
         # Create a high-quality version specifically for download
@@ -375,7 +375,7 @@ def create_download_section(fig, team_data, is_mobile):
         # Create download button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.download_button(
+            st.download_button(
                 label="📥 Download Visualization",
                 data=img_bytes,
                 file_name=filename,
@@ -383,11 +383,7 @@ def create_download_section(fig, team_data, is_mobile):
                 type="primary",
                 use_container_width=True,
                 key=f"download_btn_{count}"
-            ):
-                st.success("🎉 Download started! Check your downloads folder.")
-                st.balloons()
-
-        # st.caption(f"File: {filename} • Size: {len(img_bytes) // 1024} KB")
+            )
 
     except Exception as e:
         st.error(f"Error preparing download: {e}")
@@ -414,7 +410,7 @@ def display_team_statistics(team_stats):
 
 def display_visualization_tab(team_data, is_mobile):
     """Display the visualization tab content"""
-    st.subheader("Shot Conceded Analysis")
+    # st.subheader("Shot Conceded Analysis")
     st.write("""
     This visualization shows the relationship between the volume of shots conceded per game
     and the quality of chances conceded (xG per shot). Teams in different quadrants represent
@@ -432,10 +428,10 @@ def display_visualization_tab(team_data, is_mobile):
 
         if is_mobile:
             create_download_section(fig, team_data, is_mobile)
-            st.subheader("Preview")
-            small_fig = create_plotly_viz_with_logos(team_data, LOGOS_FOLDER, is_mobile=True)
-            small_fig.update_layout(height=300, width=350)
-            st.plotly_chart(small_fig, use_container_width=True)
+            # st.subheader("Preview")
+            # small_fig = create_plotly_viz_with_logos(team_data, LOGOS_FOLDER, is_mobile=True)
+            # small_fig.update_layout(height=300, width=350)
+            # st.plotly_chart(small_fig, use_container_width=True)
         else:
             st.plotly_chart(fig, use_container_width=True, config=plot_config)
     else:
@@ -461,29 +457,30 @@ def main():
 
     try:
         shots = load_data()
-        st.success(f"✅ Data loaded successfully! {len(shots)} shots analyzed.")
+        st.success(f"✅ Data loaded successfully! {len(shots)} shots analyzed. Hover under a team logo to see details.")
 
         team_data = prepare_team_data(shots)
 
         # Display metrics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total Teams", len(team_data))
-        with col2:
-            st.metric("Total Shots", len(shots))
-        with col3:
-            st.metric("Total xG", f"{shots['expectedGoals'].sum():.2f}")
+        # col1, col2, col3 = st.columns(3)
+        # with col1:
+        #     st.metric("Total Teams", len(team_data))
+        # with col2:
+        #     st.metric("Total Shots", len(shots))
+        # with col3:
+        #     st.metric("Total xG", f"{shots['expectedGoals'].sum():.2f}")
 
-        st.markdown("---")
+        # st.markdown("---")
 
         # Create tabs
-        tab1, tab2 = st.tabs(["📈 Interactive Visualization", "📋 Team Statistics"])
+        # tab1, tab2 = st.tabs(["📈 Interactive Visualization", "📋 Team Statistics"])
 
-        with tab1:
+        # with tab1:
+        with st.spinner("Please wait ..."):
             display_visualization_tab(team_data, is_mobile)
 
-        with tab2:
-            display_team_statistics(team_data)
+        # with tab2:
+            # display_team_statistics(team_data)
 
     except FileNotFoundError:
         st.error(f"❌ Data file not found. Please make sure '{DATA_PATH}' exists.")

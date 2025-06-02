@@ -366,7 +366,7 @@ def main():
     shots = load_data()
 
     # Create tabs
-    tab1, tab2, tab3 = st.tabs(["Shots Taken", "Shots On Target", "Home vs Away"])
+    tab1, tab2 = st.tabs(["Shots Taken", "Shots On Target"])
 
     # Fill tabs with content
     with tab1:
@@ -375,8 +375,8 @@ def main():
     with tab2:
         create_shots_on_target_tab(shots, screen_width)
 
-    with tab3:
-        create_home_vs_away_tab()
+    # with tab3:
+    #     create_home_vs_away_tab()
 
 if __name__ == "__main__":
     main()
